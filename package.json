@@ -1,0 +1,275 @@
+{
+	"name": "ibmi-member-timeline",
+	"displayName": "IBMi Source Member Timeline",
+	"description": "Tracks and visualizes save history for IBM i source members. Requires Code for IBM i.",
+	"publisher": "RickyThompson",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/thomprl/ibmi-member-timeline"
+	},
+	"license": "GPL-3.0",
+	"icon": "images/ibmi-member-timeline.png",
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"ibmi",
+		"rpgle",
+		"as400",
+		"iseries",
+		"timeline",
+		"history"
+	],
+	"extensionDependencies": [
+		"halcyontechltd.code-for-ibmi"
+	],
+	"activationEvents": [],
+	"main": "./out/extension.js",
+	"contributes": {
+		"submenus": [
+			{
+				"id": "memberTimeline.compareWith",
+				"label": "Compare With"
+			}
+		],
+		"views": {
+			"ibmi-explorer": [
+				{
+					"id": "memberTimelineView",
+					"name": "Member Timeline",
+					"when": "code-for-ibmi:connected",
+					"icon": "images/Member_Timeline_icon.svg"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "memberTimeline.refresh",
+				"title": "Refresh",
+				"category": "IBM i Member Timeline",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "memberTimeline.openDiff",
+				"title": "Open Snapshot Diff",
+				"category": "IBM i Member Timeline",
+				"icon": "$(diff)",
+				"enablement": "code-for-ibmi:connected && memberTimeline:memberActive"
+			},
+			{
+				"command": "memberTimeline.openSnapshot",
+				"title": "Open Snapshot",
+				"category": "IBM i Member Timeline",
+				"icon": "$(go-to-file)"
+			},
+			{
+				"command": "memberTimeline.revealSnapshot",
+				"title": "Reveal in File Explorer",
+				"category": "IBM i Member Timeline",
+				"icon": "$(folder-opened)"
+			},
+			{
+				"command": "memberTimeline.deleteSnapshot",
+				"title": "Delete Snapshot",
+				"category": "IBM i Member Timeline",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "memberTimeline.clearMemberHistory",
+				"title": "Clear Member History",
+				"category": "IBM i Member Timeline",
+				"icon": "$(clear-all)"
+			},
+			{
+				"command": "memberTimeline.storageSummary",
+				"title": "Storage Summary",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.deleteAllSnapshots",
+				"title": "Delete All Snapshots",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.addComment",
+				"title": "Add Comment",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.selectForCompare",
+				"title": "Select for Compare",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.compareWithActiveMember",
+				"title": "Compare with Active File",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.compareWithSelected",
+				"title": "Compare with Selected",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.compareWithLocalFile",
+				"title": "Compare with Local File",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.compareWithIfsFile",
+				"title": "Compare with IFS File",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.compareWithMember",
+				"title": "Compare with Member",
+				"category": "IBM i Member Timeline"
+			},
+			{
+				"command": "memberTimeline.pinSnapshot",
+				"title": "Pin Snapshot",
+				"category": "IBM i Member Timeline",
+				"icon": "$(pinned)"
+			},
+			{
+				"command": "memberTimeline.unpinSnapshot",
+				"title": "Unpin Snapshot",
+				"category": "IBM i Member Timeline",
+				"icon": "$(pin)"
+			}
+		],
+		"configuration": {
+			"title": "IBMi Source Member Timeline",
+			"properties": {
+				"memberTimeline.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, the extension captures source member snapshots on each save for the Member Timeline view."
+				},
+				"memberTimeline.snapshotLimit": {
+					"type": "integer",
+					"default": 20,
+					"minimum": 1,
+					"maximum": 500,
+					"description": "Maximum number of snapshots to keep per member (1–500). Pruning happens lazily after the member is opened."
+				}
+			}
+		},
+		"menus": {
+			"commandPalette": [
+				{ "command": "memberTimeline.refresh", "when": "false" },
+				{ "command": "memberTimeline.openDiff", "when": "false" },
+				{ "command": "memberTimeline.openSnapshot", "when": "false" },
+				{ "command": "memberTimeline.revealSnapshot", "when": "false" },
+				{ "command": "memberTimeline.addComment", "when": "false" },
+				{ "command": "memberTimeline.deleteSnapshot", "when": "false" },
+				{ "command": "memberTimeline.clearMemberHistory", "when": "false" },
+				{ "command": "memberTimeline.selectForCompare", "when": "false" },
+				{ "command": "memberTimeline.compareWithActiveMember", "when": "false" },
+				{ "command": "memberTimeline.compareWithSelected", "when": "false" },
+				{ "command": "memberTimeline.compareWithLocalFile", "when": "false" },
+				{ "command": "memberTimeline.compareWithIfsFile", "when": "false" },
+				{ "command": "memberTimeline.compareWithMember", "when": "false" },
+				{ "command": "memberTimeline.pinSnapshot", "when": "false" },
+				{ "command": "memberTimeline.unpinSnapshot", "when": "false" }
+			],
+			"view/title": [
+				{
+					"command": "memberTimeline.clearMemberHistory",
+					"when": "view == memberTimelineView && memberTimeline:memberActive",
+					"group": "navigation@1"
+				},
+				{
+					"command": "memberTimeline.refresh",
+					"when": "view == memberTimelineView",
+					"group": "navigation@99"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "memberTimeline.openDiff",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "inline"
+				},
+				{
+					"command": "memberTimeline.selectForCompare",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "0_compare@1"
+				},
+				{
+					"submenu": "memberTimeline.compareWith",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "0_compare@2"
+				},
+				{
+					"command": "memberTimeline.openSnapshot",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "1_open@1"
+				},
+				{
+					"command": "memberTimeline.revealSnapshot",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "1_open@2"
+				},
+				{
+					"command": "memberTimeline.addComment",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "2_comment"
+				},
+				{
+					"command": "memberTimeline.pinSnapshot",
+					"when": "view == memberTimelineView && viewItem == memberTimelineEntry",
+					"group": "3_modification@1"
+				},
+				{
+					"command": "memberTimeline.unpinSnapshot",
+					"when": "view == memberTimelineView && viewItem == memberTimelineEntryPinned",
+					"group": "3_modification@1"
+				},
+				{
+					"command": "memberTimeline.deleteSnapshot",
+					"when": "view == memberTimelineView && viewItem =~ /^memberTimelineEntry/",
+					"group": "3_modification@2"
+				}
+			],
+			"memberTimeline.compareWith": [
+				{
+					"command": "memberTimeline.compareWithActiveMember",
+					"group": "compare@1"
+				},
+				{
+					"command": "memberTimeline.compareWithSelected",
+					"when": "memberTimeline:hasCompareSelection",
+					"group": "compare@2"
+				},
+				{
+					"command": "memberTimeline.compareWithLocalFile",
+					"group": "compare@3"
+				},
+				{
+					"command": "memberTimeline.compareWithIfsFile",
+					"group": "compare@4"
+				},
+				{
+					"command": "memberTimeline.compareWithMember",
+					"group": "compare@5"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"lint": "eslint src"
+	},
+	"devDependencies": {
+		"@types/node": "^25.9.2",
+		"@types/vscode": "^1.85.0",
+		"typescript": "^5.4.0"
+	}
+}

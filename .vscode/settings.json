@@ -1,0 +1,18 @@
+{
+  "vscode-ibmi-queues.msgqBrowser.filters": [
+    {
+      "pub400": [
+        {
+          "messageQueueLibrary": "QSYS",
+          "messageQueue": "rthompson",
+          "type": "*USRPRF"
+        },
+        {
+          "messageQueueLibrary": "QUSRSYS",
+          "messageQueue": "RTHOMPSON",
+          "type": "*MSGQ"
+        }
+      ]
+    }
+  ]
+}
