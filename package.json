@@ -3,7 +3,7 @@
 	"displayName": "IBMi Source Member Timeline",
 	"description": "Tracks and visualizes save history for IBM i source members. Requires Code for IBM i.",
 	"publisher": "RickyThompson",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"engines": {
 		"vscode": "^1.85.0"
 	},

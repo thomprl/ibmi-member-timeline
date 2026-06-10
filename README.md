@@ -15,6 +15,7 @@ Requires the [Code for IBM i](https://marketplace.visualstudio.com/items?itemNam
 - **Automatic snapshots on open** — a baseline snapshot is captured when a member is opened for editing (browse-mode opens are skipped; if the content matches the last snapshot, no duplicate is created)
 - **Automatic snapshots on save** — a snapshot is captured each time you save a source member
 - **Change detection** — if the content hasn't changed since the last snapshot, no new snapshot is created
+- **Blank members are skipped** — newly created, empty source members do not get a snapshot until they contain content
 - **Initial Snapshot pinned automatically** — the very first snapshot for a member is pinned and labelled "Initial Snapshot" so you always have a restore point; pinned snapshots are never pruned automatically
 - **Timeline view** — browse all snapshots for the active member in the IBM i Explorer panel
 - **Diff against current** — click any snapshot to open a side-by-side diff against the current source

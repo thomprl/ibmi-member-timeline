@@ -105,6 +105,11 @@ export class MemberTimelineService implements vscode.Disposable {
       return;
     }
 
+    if (!content.trim()) {
+      this.log(`Skipping snapshot for ${member.library}/${member.file}(${member.name}) — content is blank.`);
+      return;
+    }
+
     try {
       const normalizedMember = normalizeMember(member);
       const memberPath = buildMemberQsysPath(normalizedMember);
