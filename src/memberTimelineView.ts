@@ -223,14 +223,14 @@ export function initializeMemberTimelineView(
     vscode.commands.registerCommand(`memberTimeline.storageSummary`, async () => {
       const { memberCount, snapshotCount, totalBytes } = await service.getStorageSummary();
       const message = snapshotCount === 0
-        ? vscode.l10n.t(`Member Timeline: No snapshots stored.`)
-        : vscode.l10n.t(`Member Timeline: {0} snapshot(s) across {1} member(s) — {2} on disk.`, String(snapshotCount), String(memberCount), formatBytes(totalBytes));
+        ? vscode.l10n.t(`Source Member Timeline: No snapshots stored.`)
+        : vscode.l10n.t(`Source Member Timeline: {0} snapshot(s) across {1} member(s) — {2} on disk.`, String(snapshotCount), String(memberCount), formatBytes(totalBytes));
       void vscode.window.showInformationMessage(message);
     }),
     vscode.commands.registerCommand(`memberTimeline.deleteAllSnapshots`, async () => {
       const { memberCount, snapshotCount, pinnedCount } = await service.getStorageSummary();
       if (snapshotCount === 0) {
-        void vscode.window.showInformationMessage(vscode.l10n.t(`Member Timeline: No snapshots to delete.`));
+        void vscode.window.showInformationMessage(vscode.l10n.t(`Source Member Timeline: No snapshots to delete.`));
         return;
       }
       const pinnedNote = pinnedCount > 0
@@ -238,7 +238,7 @@ export function initializeMemberTimelineView(
         : ``;
       const detail = vscode.l10n.t(`This will delete all {0} snapshot(s) across {1} member(s). This cannot be undone.`, String(snapshotCount), String(memberCount)) + pinnedNote;
       const confirm = await vscode.window.showWarningMessage(
-        vscode.l10n.t(`Delete all Member Timeline snapshots?`),
+        vscode.l10n.t(`Delete all Source Member Timeline snapshots?`),
         { modal: true, detail },
         vscode.l10n.t(`Delete All`)
       );
@@ -367,11 +367,19 @@ export function initializeMemberTimelineView(
   );
 
   codeForIBMi.instance.subscribe(context, `connected`, `Refresh member timeline`, () => {
+    const connection = codeForIBMi.instance.getConnection();
+    service.setCurrentSystem(connection?.currentHost);
     void provider.refreshForActiveEditor(treeView);
   });
   codeForIBMi.instance.subscribe(context, `disconnected`, `Clear member timeline`, () => {
+    service.setCurrentSystem(undefined);
     provider.clear(treeView);
   });
+
+  const initialConnection = codeForIBMi.instance.getConnection();
+  if (initialConnection) {
+    service.setCurrentSystem(initialConnection.currentHost);
+  }
 
   void provider.refreshForActiveEditor(treeView);
 }
@@ -447,7 +455,7 @@ class MemberTimelineViewProvider implements vscode.TreeDataProvider<MemberTimeli
 
 class MemberTimelineDisabledItem extends vscode.TreeItem {
   constructor() {
-    super(vscode.l10n.t(`Member Timeline is disabled`), vscode.TreeItemCollapsibleState.None);
+    super(vscode.l10n.t(`Source Member Timeline is disabled`), vscode.TreeItemCollapsibleState.None);
     this.description = vscode.l10n.t(`Open VS Code settings to enable`);
     this.iconPath = new vscode.ThemeIcon(`gear`);
     this.command = {

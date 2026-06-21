@@ -1,8 +1,8 @@
 <p>
-  <img src="images/ibmi-member-timeline.png" alt="IBM i Member Timeline" width="128"/>
+  <img src="images/ibmi-member-timeline.png" alt="IBM i Source Member Timeline" width="128"/>
 </p>
 
-# IBM i Member Timeline
+# IBM i Source Member Timeline
 
 A Visual Studio Code extension that automatically captures and shows the save history of IBM i source members. Every time you open or save a source member, a snapshot is stored locally on your PC — giving you a fast, lightweight history you can browse, diff, and manage without touching source control and without any round trips to the IBM i.
 
@@ -27,6 +27,7 @@ Requires the [Code for IBM i](https://marketplace.visualstudio.com/items?itemNam
 - **Delete snapshots** — right-click one or more snapshots to permanently remove them; supports multi-select
 - **Clear member history** — one-click button in the view title bar to remove all unpinned snapshots for the active member; pinned snapshots are preserved
 - **Configurable limit** — control how many unpinned snapshots are kept per member; older ones are pruned automatically (pinned snapshots are never pruned)
+- **System-aware storage** — snapshots are scoped to the IBM i system you are connected to, so identically named members on different systems are tracked independently
 - **Stored locally** — all snapshots are saved on your local PC, not the IFS
 - **No IBM i server calls** — all content is read from VS Code's in-memory document model; no round trips to the IBM i are made
 
@@ -42,10 +43,11 @@ Requires the [Code for IBM i](https://marketplace.visualstudio.com/items?itemNam
 
 When you open a member for editing or save a source member (via the `member://` scheme used by Code for IBM i), the extension:
 
-1. Checks whether the member was opened in browse (read-only) mode — if so, no snapshot is taken
-2. Reads the document content already in memory — no IBM i download required
-3. Hashes the content and compares it to the last saved snapshot
-4. If the content has changed, writes a new snapshot file to local storage and updates the index
+1. Identifies the connected IBM i system (by hostname) so snapshots are scoped per system
+2. Checks whether the member was opened in browse (read-only) mode — if so, no snapshot is taken
+3. Reads the document content already in memory — no IBM i download required
+4. Hashes the content and compares it to the last saved snapshot
+5. If the content has changed, writes a new snapshot file to local storage and updates the index
 
 Snapshots are stored in VS Code's local extension storage on your PC:
 
@@ -75,7 +77,7 @@ thomprl.ibmi-member-timeline/
 | `memberTimeline.snapshotLimit` | `20` | Maximum snapshots to keep per member (1–500); older ones are pruned lazily when the member is opened |
 
 <p>
-  <img src="images/Member_Timeline_3.png" alt="IBM i Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
+  <img src="images/Member_Timeline_3.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
 </p>
 
 
@@ -84,12 +86,12 @@ thomprl.ibmi-member-timeline/
 ## Usage
 
 1. Connect to an IBM i system using Code for IBM i
-2. Open a source member — the **Member Timeline** view appears in the IBM i Explorer panel and a baseline snapshot is captured automatically
+2. Open a source member — the **Source Member Timeline** view appears in the IBM i Explorer panel and a baseline snapshot is captured automatically
 3. Save the member to capture additional snapshots
 4. **Click** any timeline entry to open a side-by-side diff against the current source
 
 <p>
-  <img src="images/Member_Timeline_1.png" alt="IBM i Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
+  <img src="images/Member_Timeline_1.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
 </p>
 
 
@@ -113,7 +115,7 @@ thomprl.ibmi-member-timeline/
 | **Clear icon (view title bar)** | Removes all unpinned snapshots for the active member (with confirmation); pinned snapshots are preserved |
 
 <p>
-  <img src="images/Member_Timeline_4.png" alt="IBM i Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
+  <img src="images/Member_Timeline_4.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
 </p>
 
 
@@ -121,11 +123,11 @@ thomprl.ibmi-member-timeline/
 
 | Command | Description |
 |---|---|
-| `IBM i Member Timeline: Storage Summary` | Shows total snapshot count, member count, and disk space used |
-| `IBM i Member Timeline: Delete All Snapshots` | Permanently removes all snapshots for all members (with confirmation) |
+| `IBM i Source Member Timeline: Storage Summary` | Shows total snapshot count, member count, and disk space used |
+| `IBM i Source Member Timeline: Delete All Snapshots` | Permanently removes all snapshots for all members (with confirmation) |
 
 <p>
-  <img src="images/Member_Timeline_2.png" alt="IBM i Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
+  <img src="images/Member_Timeline_2.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
 </p>
 
 ---
@@ -138,8 +140,9 @@ This extension depends on [Code for IBM i](https://marketplace.visualstudio.com/
 
 | API | Purpose |
 |---|---|
-| `instance.subscribe('connected', ...)` | Refreshes the timeline view when an IBM i connection is established |
-| `instance.subscribe('disconnected', ...)` | Clears the timeline view when the connection is dropped |
+| `instance.getConnection()` | Reads the current hostname to scope snapshots per IBM i system (metadata only — no server calls) |
+| `instance.subscribe('connected', ...)` | Refreshes the timeline view and sets the current system when an IBM i connection is established |
+| `instance.subscribe('disconnected', ...)` | Clears the timeline view and resets the current system when the connection is dropped |
 | `member://` URI scheme | Identifies IBM i source member documents; the extension parses these URIs but makes no calls to the IBM i server |
 
 No IBM i server calls are made by this extension. All snapshot content is read from VS Code's in-memory document model.
@@ -152,7 +155,7 @@ No IBM i server calls are made by this extension. All snapshot content is read f
 | `vscode.workspace.onDidOpenTextDocument` | Captures a baseline snapshot when a member is first opened |
 | `vscode.workspace.onDidSaveTextDocument` | Captures a snapshot when a member is saved |
 | `vscode.workspace.onDidChangeConfiguration` | Responds to changes in extension settings |
-| `vscode.window.createTreeView` | Member Timeline panel in the IBM i Explorer sidebar |
+| `vscode.window.createTreeView` | Source Member Timeline panel in the IBM i Explorer sidebar |
 | `vscode.commands.executeCommand('vscode.diff', ...)` | Opens the side-by-side diff editor |
 | `vscode.commands.executeCommand('vscode.open', ...)` | Opens a snapshot file in a new editor tab |
 | `vscode.commands.executeCommand('revealFileInOS', ...)` | Reveals the snapshot file in Windows Explorer / macOS Finder |

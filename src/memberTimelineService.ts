@@ -23,6 +23,7 @@ export class MemberTimelineService implements vscode.Disposable {
   private readonly snapshotsUri: vscode.Uri;
   private readonly indexUri: vscode.Uri;
   private storageInitialized = false;
+  private currentSystem: string | undefined;
 
   constructor(storageUri: vscode.Uri) {
     this.snapshotsUri = vscode.Uri.joinPath(storageUri, `snapshots`);
@@ -35,6 +36,14 @@ export class MemberTimelineService implements vscode.Disposable {
 
   isEnabled(): boolean {
     return vscode.workspace.getConfiguration(`memberTimeline`).get<boolean>(`enabled`, true);
+  }
+
+  setCurrentSystem(system: string | undefined): void {
+    this.currentSystem = system?.toUpperCase();
+  }
+
+  getCurrentSystem(): string | undefined {
+    return this.currentSystem;
   }
 
   private getSnapshotLimit(): number {
@@ -100,6 +109,20 @@ export class MemberTimelineService implements vscode.Disposable {
     return kept;
   }
 
+  private async resolveKey(index: MemberTimelineIndex, member: MemberTimelineMember): Promise<string> {
+    const key = buildMemberTimelineKey(member, this.currentSystem);
+    if (this.currentSystem) {
+      const legacyKey = buildMemberTimelineKey(member);
+      if (!index.members[key] && index.members[legacyKey]) {
+        index.members[key] = index.members[legacyKey];
+        delete index.members[legacyKey];
+        await this.saveIndex(index);
+        this.log(`Migrated legacy snapshots to ${key}.`);
+      }
+    }
+    return key;
+  }
+
   async captureMemberSnapshot(member: MemberTimelineMember, action: MemberTimelineAction = `saved`, content: string): Promise<void> {
     if (!this.isEnabled()) {
       return;
@@ -116,7 +139,7 @@ export class MemberTimelineService implements vscode.Disposable {
 
       await this.ensureStorageExists();
       const index = await this.loadIndex();
-      const key = buildMemberTimelineKey(normalizedMember);
+      const key = await this.resolveKey(index, normalizedMember);
 
       const contentHash = hashContent(content);
       const bucket = index.members[key] || { qsysPath: memberPath, entries: [] };
@@ -160,7 +183,7 @@ export class MemberTimelineService implements vscode.Disposable {
     }
     const normalizedMember = normalizeMember(member);
     const index = await this.loadIndex();
-    const key = buildMemberTimelineKey(normalizedMember);
+    const key = await this.resolveKey(index, normalizedMember);
     const bucket = index.members[key];
     if (!bucket) {
       return [];
@@ -175,7 +198,7 @@ export class MemberTimelineService implements vscode.Disposable {
     try {
       const normalizedMember = normalizeMember(member);
       const index = await this.loadIndex();
-      const key = buildMemberTimelineKey(normalizedMember);
+      const key = await this.resolveKey(index, normalizedMember);
       const bucket = index.members[key];
       if (!bucket) {
         return;
@@ -198,7 +221,7 @@ export class MemberTimelineService implements vscode.Disposable {
     if (!this.isEnabled()) {
       return;
     }
-    const key = buildMemberTimelineKey(normalizeMember(member));
+    const key = buildMemberTimelineKey(normalizeMember(member), this.currentSystem);
     if (this.scheduledPrunes.has(key)) {
       return;
     }
@@ -218,7 +241,7 @@ export class MemberTimelineService implements vscode.Disposable {
 
       const byKey = new Map<string, MemberTimelineEntry[]>();
       for (const entry of entries) {
-        const key = buildMemberTimelineKey(entry.member);
+        const key = await this.resolveKey(index, entry.member);
         if (!byKey.has(key)) {
           byKey.set(key, []);
         }
@@ -253,7 +276,7 @@ export class MemberTimelineService implements vscode.Disposable {
     try {
       const normalizedMember = normalizeMember(member);
       const index = await this.loadIndex();
-      const key = buildMemberTimelineKey(normalizedMember);
+      const key = await this.resolveKey(index, normalizedMember);
       const bucket = index.members[key];
       if (!bucket) { return; }
       const entry = bucket.entries.find(e => e.id === entryId);
@@ -274,7 +297,7 @@ export class MemberTimelineService implements vscode.Disposable {
     try {
       const normalizedMember = normalizeMember(member);
       const index = await this.loadIndex();
-      const key = buildMemberTimelineKey(normalizedMember);
+      const key = await this.resolveKey(index, normalizedMember);
       const bucket = index.members[key];
       if (!bucket) {
         return;
@@ -299,7 +322,7 @@ export class MemberTimelineService implements vscode.Disposable {
     try {
       const normalizedMember = normalizeMember(member);
       const index = await this.loadIndex();
-      const key = buildMemberTimelineKey(normalizedMember);
+      const key = await this.resolveKey(index, normalizedMember);
       const bucket = index.members[key];
       if (!bucket || bucket.entries.length === 0) {
         return;

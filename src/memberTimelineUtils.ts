@@ -45,10 +45,11 @@ export function normalizeMember(member: MemberTimelineMember): MemberTimelineMem
   };
 }
 
-export function buildMemberTimelineKey(member: MemberTimelineMember): string {
+export function buildMemberTimelineKey(member: MemberTimelineMember, system?: string): string {
   const normalized = normalizeMember(member);
   const aspSegment = normalized.asp ? `${normalized.asp}/` : ``;
-  return `${aspSegment}${normalized.library}/${normalized.file}/${normalized.name}.${normalized.extension}`;
+  const memberKey = `${aspSegment}${normalized.library}/${normalized.file}/${normalized.name}.${normalized.extension}`;
+  return system ? `${system}:${memberKey}` : memberKey;
 }
 
 export function buildMemberQsysPath(member: MemberTimelineMember): string {

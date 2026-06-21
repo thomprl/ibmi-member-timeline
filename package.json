@@ -3,7 +3,7 @@
 	"displayName": "IBMi Source Member Timeline",
 	"description": "Tracks and visualizes save history for IBM i source members. Requires Code for IBM i.",
 	"publisher": "RickyThompson",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"engines": {
 		"vscode": "^1.85.0"
 	},
@@ -40,7 +40,7 @@
 			"ibmi-explorer": [
 				{
 					"id": "memberTimelineView",
-					"name": "Member Timeline",
+					"name": "Source Member Timeline",
 					"when": "code-for-ibmi:connected",
 					"icon": "images/Member_Timeline_icon.svg"
 				}
@@ -50,95 +50,95 @@
 			{
 				"command": "memberTimeline.refresh",
 				"title": "Refresh",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "memberTimeline.openDiff",
 				"title": "Open Snapshot Diff",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(diff)",
 				"enablement": "code-for-ibmi:connected && memberTimeline:memberActive"
 			},
 			{
 				"command": "memberTimeline.openSnapshot",
 				"title": "Open Snapshot",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(go-to-file)"
 			},
 			{
 				"command": "memberTimeline.revealSnapshot",
 				"title": "Reveal in File Explorer",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(folder-opened)"
 			},
 			{
 				"command": "memberTimeline.deleteSnapshot",
 				"title": "Delete Snapshot",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(trash)"
 			},
 			{
 				"command": "memberTimeline.clearMemberHistory",
 				"title": "Clear Member History",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(clear-all)"
 			},
 			{
 				"command": "memberTimeline.storageSummary",
 				"title": "Storage Summary",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.deleteAllSnapshots",
 				"title": "Delete All Snapshots",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.addComment",
 				"title": "Add Comment",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.selectForCompare",
 				"title": "Select for Compare",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.compareWithActiveMember",
 				"title": "Compare with Active File",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.compareWithSelected",
 				"title": "Compare with Selected",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.compareWithLocalFile",
 				"title": "Compare with Local File",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.compareWithIfsFile",
 				"title": "Compare with IFS File",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.compareWithMember",
 				"title": "Compare with Member",
-				"category": "IBM i Member Timeline"
+				"category": "IBM i Source Member Timeline"
 			},
 			{
 				"command": "memberTimeline.pinSnapshot",
 				"title": "Pin Snapshot",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(pinned)"
 			},
 			{
 				"command": "memberTimeline.unpinSnapshot",
 				"title": "Unpin Snapshot",
-				"category": "IBM i Member Timeline",
+				"category": "IBM i Source Member Timeline",
 				"icon": "$(pin)"
 			}
 		],
@@ -148,7 +148,7 @@
 				"memberTimeline.enabled": {
 					"type": "boolean",
 					"default": true,
-					"description": "When enabled, the extension captures source member snapshots on each save for the Member Timeline view."
+					"description": "When enabled, the extension captures source member snapshots on each save for the Source Member Timeline view."
 				},
 				"memberTimeline.snapshotLimit": {
 					"type": "integer",
