@@ -394,9 +394,6 @@ class MemberTimelineViewProvider implements vscode.TreeDataProvider<MemberTimeli
   constructor(private readonly service: MemberTimelineService) {}
 
   getTreeItem(element: MemberTimelineItem): vscode.TreeItem {
-    if (element instanceof MemberTimelineTreeItem && element.entry.id === this.selectedForCompare?.id) {
-      element.iconPath = new vscode.ThemeIcon(`git-compare`);
-    }
     return element;
   }
 

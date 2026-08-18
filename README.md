@@ -74,7 +74,7 @@ thomprl.ibmi-member-timeline/
 | Setting | Default | Description |
 |---|---|---|
 | `memberTimeline.enabled` | `true` | Enable or disable snapshot capture on open and save |
-| `memberTimeline.snapshotLimit` | `20` | Maximum snapshots to keep per member (1–500); older ones are pruned lazily when the member is opened |
+| `memberTimeline.snapshotLimit` | `20` | Maximum snapshots to keep per member (1–500); older ones are pruned automatically as soon as a new snapshot is captured, and lazily for other members when they're opened |
 
 <p>
   <img src="images/Member_Timeline_3.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
@@ -103,7 +103,7 @@ thomprl.ibmi-member-timeline/
 | **Right-Click → Add Comment** | Adds or edits an optional note on the snapshot; the note is shown in the timeline description and diff title |
 | **Right-Click → Pin Snapshot** | Pins the snapshot so it is never pruned automatically and survives Clear Member History; the entry icon changes to a pin |
 | **Right-Click → Unpin Snapshot** | Removes the pin from a previously pinned snapshot |
-| **Right-Click → Select for Compare** | Marks this snapshot as the left side for a future comparison; the entry icon changes to indicate selection |
+| **Right-Click → Select for Compare** | Marks this snapshot as the left side for a future comparison (shown in a status bar message); the entry icon is unchanged |
 | **Right-Click → Compare With → Active File** | Diffs the snapshot against whatever file is currently open in the editor |
 | **Right-Click → Compare With → Selected** | Diffs against the snapshot previously marked with "Select for Compare" (only shown once a selection exists) |
 | **Right-Click → Compare With → Local File** | Opens a file picker to choose any local file to diff against |

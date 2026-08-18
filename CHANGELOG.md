@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+- Fixed: the snapshot limit was only enforced when a member's timeline was opened, so members edited without ever being viewed in the timeline panel could accumulate unlimited snapshots. The limit is now also enforced immediately on every capture.
+- "Select for Compare" no longer changes the entry's icon; selection is still confirmed via the status bar message
+
 ## 1.0.2
 
 - Snapshots are now scoped per IBM i system — identically named members on different systems are tracked independently

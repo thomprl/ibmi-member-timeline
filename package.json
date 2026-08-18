@@ -3,7 +3,7 @@
 	"displayName": "IBMi Source Member Timeline",
 	"description": "Tracks and visualizes save history for IBM i source members. Requires Code for IBM i.",
 	"publisher": "RickyThompson",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"engines": {
 		"vscode": "^1.85.0"
 	},
@@ -155,7 +155,7 @@
 					"default": 20,
 					"minimum": 1,
 					"maximum": 500,
-					"description": "Maximum number of snapshots to keep per member (1–500). Pruning happens lazily after the member is opened."
+					"description": "Maximum number of snapshots to keep per member (1–500). Older snapshots are pruned automatically as new ones are captured, and lazily for other members when they are opened."
 				}
 			}
 		},

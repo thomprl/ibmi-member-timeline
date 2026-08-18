@@ -167,6 +167,7 @@ export class MemberTimelineService implements vscode.Disposable {
         ...(isFirst ? { pinned: true, comment: `Initial Snapshot` } : {}),
         member: normalizedMember
       });
+      bucket.entries = await this.pruneBucket(bucket.entries);
 
       index.members[key] = bucket;
       await this.saveIndex(index);
