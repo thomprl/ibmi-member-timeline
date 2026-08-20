@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Version updated
+
 ## 1.0.3
 
 - Fixed: the snapshot limit was only enforced when a member's timeline was opened, so members edited without ever being viewed in the timeline panel could accumulate unlimited snapshots. The limit is now also enforced immediately on every capture.
