@@ -18,6 +18,8 @@ Requires the [Code for IBM i](https://marketplace.visualstudio.com/items?itemNam
 - **Blank members are skipped** — newly created, empty source members do not get a snapshot until they contain content
 - **Initial Snapshot pinned automatically** — the very first snapshot for a member is pinned and labelled "Initial Snapshot" so you always have a restore point; pinned snapshots are never pruned automatically
 - **Timeline view** — browse all snapshots for the active member in the IBM i Explorer panel
+- **Recently Opened Members panel** — a companion view that lists the last members you opened (most recent first, scoped to the connected system); click an entry to reopen it directly from the IBM i — no local copy is downloaded or cached by this extension
+- **Toggle the Recently Opened Members panel** — disable it to hide the panel and stop tracking; previously recorded history is kept and picks back up if you re-enable it
 - **Diff against current** — click any snapshot to open a side-by-side diff against the current source
 - **Compare With** — right-click any snapshot to compare it against the active file, another snapshot, a local file, an IFS file, or another member
 - **Snapshot comments** — right-click any snapshot to add or edit an optional note (e.g. "Before refactor", "Working version")
@@ -27,6 +29,7 @@ Requires the [Code for IBM i](https://marketplace.visualstudio.com/items?itemNam
 - **Delete snapshots** — right-click one or more snapshots to permanently remove them; supports multi-select
 - **Clear member history** — one-click button in the view title bar to remove all unpinned snapshots for the active member; pinned snapshots are preserved
 - **Configurable limit** — control how many unpinned snapshots are kept per member; older ones are pruned automatically (pinned snapshots are never pruned)
+- **Configurable recent members list** — control how many recently opened members are remembered per system
 - **System-aware storage** — snapshots are scoped to the IBM i system you are connected to, so identically named members on different systems are tracked independently
 - **Stored locally** — all snapshots are saved on your local PC, not the IFS
 - **No IBM i server calls** — all content is read from VS Code's in-memory document model; no round trips to the IBM i are made
@@ -61,11 +64,14 @@ The folder structure within that location:
 
 ```
 thomprl.ibmi-member-timeline/
-  index.json        ← tracks all snapshot metadata (timestamps, comments, file paths)
+  index.json           ← tracks all snapshot metadata (timestamps, comments, file paths)
+  recentMembers.json   ← tracks the most recently opened members, per system
   snapshots/
     <member>_<timestamp>.<ext>
     ...
 ```
+
+The Recently Opened Members panel only stores lightweight metadata (system, library, file, member name, and timestamp) in `recentMembers.json` — it never writes the member's source content to disk. Selecting an entry opens the member directly through the `member://` scheme, which Code for IBM i resolves against the live IBM i connection; this extension does not cache or persist that content.
 
 ---
 
@@ -75,6 +81,8 @@ thomprl.ibmi-member-timeline/
 |---|---|---|
 | `memberTimeline.enabled` | `true` | Enable or disable snapshot capture on open and save |
 | `memberTimeline.snapshotLimit` | `20` | Maximum snapshots to keep per member (1–500); older ones are pruned automatically as soon as a new snapshot is captured, and lazily for other members when they're opened |
+| `memberTimeline.recentMembersEnabled` | `true` | Show the Recently Opened Members panel and track members as they're opened; disabling hides the panel and stops tracking, but keeps existing history (picks back up if re-enabled) |
+| `memberTimeline.recentMembersLimit` | `10` | Number of recently opened members to remember in the Recently Opened Members panel (1–100), scoped per IBM i system |
 
 <p>
   <img src="images/Member_Timeline_3.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
@@ -86,9 +94,10 @@ thomprl.ibmi-member-timeline/
 ## Usage
 
 1. Connect to an IBM i system using Code for IBM i
-2. Open a source member — the **Source Member Timeline** view appears in the IBM i Explorer panel and a baseline snapshot is captured automatically
+2. Open a source member — the **Source Member Timeline** view appears in the IBM i Explorer panel and a baseline snapshot is captured automatically; the member is also added to the **Recently Opened Members** panel
 3. Save the member to capture additional snapshots
 4. **Click** any timeline entry to open a side-by-side diff against the current source
+5. **Click** any entry in **Recently Opened Members** to reopen that member directly from the IBM i
 
 <p>
   <img src="images/Member_Timeline_1.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
@@ -118,6 +127,19 @@ thomprl.ibmi-member-timeline/
   <img src="images/Member_Timeline_4.png" alt="IBM i Source Member Timeline" style="padding: 5px; background-color: darkgreen;  display: block;"/>
 </p>
 
+
+### Recently Opened Members Panel
+
+A separate panel below the Source Member Timeline view lists the most recently opened members for the connected system, newest first.
+
+| Action | Description |
+|---|---|
+| **Click** | Opens the member directly from the IBM i using the `member://` scheme — no local copy is downloaded or cached by this extension |
+| **Clear icon (view title bar)** | Removes all entries from the Recently Opened Members panel for the connected system |
+
+Entries are recorded when a member is actually opened as an editor tab (including browse/read-only opens), independent of snapshot capture, and are capped at `memberTimeline.recentMembersLimit` per system. Members that Code for IBM i or a language server (e.g. the RPGLE `/COPY`/`/INCLUDE` resolver) reads in the background without opening a visible tab are not recorded.
+
+Set `memberTimeline.recentMembersEnabled` to `false` to hide the panel and stop tracking entirely; the recorded history is left in place on disk and the panel picks back up (starting from that stale list) if you turn it back on. History is not cleared automatically when you disable it — use the Clear icon first if you want a fresh start.
 
 ### Command Palette
 
@@ -155,9 +177,9 @@ No IBM i server calls are made by this extension. All snapshot content is read f
 | `vscode.workspace.onDidOpenTextDocument` | Captures a baseline snapshot when a member is first opened |
 | `vscode.workspace.onDidSaveTextDocument` | Captures a snapshot when a member is saved |
 | `vscode.workspace.onDidChangeConfiguration` | Responds to changes in extension settings |
-| `vscode.window.createTreeView` | Source Member Timeline panel in the IBM i Explorer sidebar |
+| `vscode.window.createTreeView` | Source Member Timeline and Recently Opened Members panels in the IBM i Explorer sidebar |
 | `vscode.commands.executeCommand('vscode.diff', ...)` | Opens the side-by-side diff editor |
-| `vscode.commands.executeCommand('vscode.open', ...)` | Opens a snapshot file in a new editor tab |
+| `vscode.commands.executeCommand('vscode.open', ...)` | Opens a snapshot file, or a member from the Recently Opened Members panel, in a new editor tab |
 | `vscode.commands.executeCommand('revealFileInOS', ...)` | Reveals the snapshot file in Windows Explorer / macOS Finder |
 | `vscode.commands.executeCommand('setContext', ...)` | Sets context keys used by `when` clauses in menus |
 | `vscode.window.showInputBox` | Comment input and member path prompts |

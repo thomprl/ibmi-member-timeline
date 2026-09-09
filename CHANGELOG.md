@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.5
+
+- Added a **Recently Opened Members** panel that lists the last members you opened, newest first, scoped to the connected system
+- Click an entry to reopen the member directly from the IBM i 
+- Added `memberTimeline.recentMembersLimit` setting to control how many recently opened members are remembered per system (default 10)
+- Added a Clear icon to the Recently Opened Members panel title bar to remove its entries for the connected system
+- Added `memberTimeline.recentMembersEnabled` setting (default `true`) to hide the Recently Opened Members panel and stop tracking; existing history is preserved and resumes if re-enabled
+
 ## 1.0.4
 
 - Version updated

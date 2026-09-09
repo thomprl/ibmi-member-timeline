@@ -5,6 +5,7 @@ import { MemberTimelineService } from './memberTimelineService';
 
 type TimelineEntry = Awaited<ReturnType<MemberTimelineService['getSnapshotsForMember']>>[number];
 type MemberTimelineItem = MemberTimelineTreeItem | MemberTimelineDisabledItem;
+type RecentMemberEntry = Awaited<ReturnType<MemberTimelineService['getRecentMembers']>>[number];
 
 function resolveTrackedMemberUri(): vscode.Uri | undefined {
   const activeEditorUri = vscode.window.activeTextEditor?.document.uri;
@@ -53,19 +54,48 @@ export function initializeMemberTimelineView(
     canSelectMany: true
   });
 
+  const recentProvider = new RecentMembersViewProvider(service);
+  const recentTreeView = vscode.window.createTreeView(`memberTimelineRecentView`, {
+    treeDataProvider: recentProvider,
+    showCollapseAll: false,
+    canSelectMany: false
+  });
+
+  void vscode.commands.executeCommand(`setContext`, `memberTimeline:recentMembersEnabled`, service.isRecentMembersEnabled());
+
   context.subscriptions.push(
     treeView,
-    service.onDidUpdate(() => { void provider.refreshForActiveEditor(treeView); }),
+    recentTreeView,
+    service.onDidUpdate(() => {
+      void provider.refreshForActiveEditor(treeView);
+      void recentProvider.refresh();
+    }),
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration(`memberTimeline`)) {
         service.resetStorage();
+        void vscode.commands.executeCommand(`setContext`, `memberTimeline:recentMembersEnabled`, service.isRecentMembersEnabled());
         void provider.refreshForActiveEditor(treeView);
+        void recentProvider.refresh();
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => { void provider.refreshForActiveEditor(treeView); }),
-    vscode.window.tabGroups.onDidChangeTabs(() => { void provider.refreshForActiveEditor(treeView); }),
+    vscode.window.tabGroups.onDidChangeTabs(async event => {
+      void provider.refreshForActiveEditor(treeView);
+      // Only tabs actually opened in the editor count as "opened" — this excludes
+      // background member reads (e.g. the RPGLE language server resolving /COPY
+      // and /INCLUDE targets via workspace.openTextDocument), which never surface as a tab.
+      for (const tab of event.opened) {
+        if (tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === `member` && service.isEnabled()) {
+          const member = service.parseMemberFromUri(tab.input.uri);
+          if (member) {
+            await service.recordRecentMemberOpen(member);
+          }
+        }
+      }
+    }),
     vscode.workspace.onDidOpenTextDocument(async document => {
       if (document.uri.scheme === `member` && service.isEnabled()) {
+        const member = service.parseMemberFromUri(document.uri);
         try {
           const stat = await vscode.workspace.fs.stat(document.uri);
           if ((stat.permissions ?? 0) & vscode.FilePermission.Readonly) {
@@ -74,7 +104,6 @@ export function initializeMemberTimelineView(
         } catch {
           // stat unavailable, fall through and capture
         }
-        const member = service.parseMemberFromUri(document.uri);
         if (member) {
           await service.captureMemberSnapshot(member, `opened`, document.getText());
         }
@@ -90,7 +119,22 @@ export function initializeMemberTimelineView(
         await provider.refreshForActiveEditor(treeView);
       }
     }),
-    vscode.commands.registerCommand(`memberTimeline.refresh`, () => { void provider.refreshForActiveEditor(treeView); }),
+    vscode.commands.registerCommand(`memberTimeline.refresh`, () => {
+      void provider.refreshForActiveEditor(treeView);
+      void recentProvider.refresh();
+    }),
+    vscode.commands.registerCommand(`memberTimeline.openRecentMember`, async (item?: RecentMemberTreeItem) => {
+      const recent = item?.recent;
+      if (!recent) {
+        return;
+      }
+      const memberUri = getMemberUri(recent.member);
+      await vscode.commands.executeCommand(`vscode.open`, memberUri, { preview: false });
+    }),
+    vscode.commands.registerCommand(`memberTimeline.clearRecentMembers`, async () => {
+      await service.clearRecentMembers();
+      await recentProvider.refresh();
+    }),
     vscode.commands.registerCommand(`memberTimeline.openDiff`, async (item?: MemberTimelineTreeItem | TimelineEntry) => {
       const entry = item instanceof MemberTimelineTreeItem ? item.entry : item;
       if (!entry) {
@@ -370,10 +414,12 @@ export function initializeMemberTimelineView(
     const connection = codeForIBMi.instance.getConnection();
     service.setCurrentSystem(connection?.currentHost);
     void provider.refreshForActiveEditor(treeView);
+    void recentProvider.refresh();
   });
   codeForIBMi.instance.subscribe(context, `disconnected`, `Clear member timeline`, () => {
     service.setCurrentSystem(undefined);
     provider.clear(treeView);
+    void recentProvider.refresh();
   });
 
   const initialConnection = codeForIBMi.instance.getConnection();
@@ -382,6 +428,7 @@ export function initializeMemberTimelineView(
   }
 
   void provider.refreshForActiveEditor(treeView);
+  void recentProvider.refresh();
 }
 
 class MemberTimelineViewProvider implements vscode.TreeDataProvider<MemberTimelineItem> {
@@ -447,6 +494,48 @@ class MemberTimelineViewProvider implements vscode.TreeDataProvider<MemberTimeli
     treeView.message = vscode.l10n.t(`Open an IBM i source member to view history.`);
     void vscode.commands.executeCommand(`setContext`, `memberTimeline:memberActive`, false);
     this.emitter.fire(undefined);
+  }
+}
+
+class RecentMembersViewProvider implements vscode.TreeDataProvider<RecentMemberTreeItem> {
+  private readonly emitter = new vscode.EventEmitter<RecentMemberTreeItem | undefined>();
+  readonly onDidChangeTreeData = this.emitter.event;
+
+  private entries: RecentMemberTreeItem[] = [];
+
+  constructor(private readonly service: MemberTimelineService) {}
+
+  getTreeItem(element: RecentMemberTreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  getChildren(): vscode.ProviderResult<RecentMemberTreeItem[]> {
+    return this.entries;
+  }
+
+  async refresh(): Promise<void> {
+    const recents = await this.service.getRecentMembers();
+    this.entries = recents.map(recent => new RecentMemberTreeItem(recent));
+    this.emitter.fire(undefined);
+  }
+}
+
+class RecentMemberTreeItem extends vscode.TreeItem {
+  constructor(readonly recent: RecentMemberEntry) {
+    const label = `${recent.member.name}.${recent.member.extension}`;
+    super(label, vscode.TreeItemCollapsibleState.None);
+
+    const qualified = `${recent.member.library}/${recent.member.file}`;
+    const opened = new Date(recent.timestamp).toLocaleString();
+    this.description = `${qualified} — ${opened}`;
+    this.tooltip = vscode.l10n.t(`{0}\nLast opened: {1}`, `${qualified}/${label}`, opened);
+    this.iconPath = new vscode.ThemeIcon(`file-code`);
+    this.contextValue = `memberTimelineRecentEntry`;
+    this.command = {
+      command: `memberTimeline.openRecentMember`,
+      title: vscode.l10n.t(`Open Member`),
+      arguments: [this]
+    };
   }
 }
 

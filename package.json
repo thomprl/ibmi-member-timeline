@@ -3,7 +3,7 @@
 	"displayName": "IBMi Source Member Timeline",
 	"description": "Tracks and visualizes save history for IBM i source members. Requires Code for IBM i.",
 	"publisher": "RickyThompson",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"engines": {
 		"vscode": "^1.85.0"
 	},
@@ -42,6 +42,12 @@
 					"id": "memberTimelineView",
 					"name": "Source Member Timeline",
 					"when": "code-for-ibmi:connected",
+					"icon": "images/Member_Timeline_icon.svg"
+				},
+				{
+					"id": "memberTimelineRecentView",
+					"name": "Recently Opened Members",
+					"when": "code-for-ibmi:connected && memberTimeline:recentMembersEnabled",
 					"icon": "images/Member_Timeline_icon.svg"
 				}
 			]
@@ -140,6 +146,18 @@
 				"title": "Unpin Snapshot",
 				"category": "IBM i Source Member Timeline",
 				"icon": "$(pin)"
+			},
+			{
+				"command": "memberTimeline.openRecentMember",
+				"title": "Open Member",
+				"category": "IBM i Source Member Timeline",
+				"icon": "$(go-to-file)"
+			},
+			{
+				"command": "memberTimeline.clearRecentMembers",
+				"title": "Clear Recently Opened Members",
+				"category": "IBM i Source Member Timeline",
+				"icon": "$(clear-all)"
 			}
 		],
 		"configuration": {
@@ -156,6 +174,18 @@
 					"minimum": 1,
 					"maximum": 500,
 					"description": "Maximum number of snapshots to keep per member (1–500). Older snapshots are pruned automatically as new ones are captured, and lazily for other members when they are opened."
+				},
+				"memberTimeline.recentMembersEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "When enabled, shows the Recently Opened Members panel and tracks members as you open them. When disabled, the panel is hidden and no new members are recorded; previously recorded history is kept and picks back up if you re-enable it."
+				},
+				"memberTimeline.recentMembersLimit": {
+					"type": "integer",
+					"default": 10,
+					"minimum": 1,
+					"maximum": 100,
+					"description": "Number of recently opened source members to remember in the Recently Opened Members panel (1–100), scoped per IBM i system."
 				}
 			}
 		},
@@ -175,7 +205,9 @@
 				{ "command": "memberTimeline.compareWithIfsFile", "when": "false" },
 				{ "command": "memberTimeline.compareWithMember", "when": "false" },
 				{ "command": "memberTimeline.pinSnapshot", "when": "false" },
-				{ "command": "memberTimeline.unpinSnapshot", "when": "false" }
+				{ "command": "memberTimeline.unpinSnapshot", "when": "false" },
+				{ "command": "memberTimeline.openRecentMember", "when": "false" },
+				{ "command": "memberTimeline.clearRecentMembers", "when": "false" }
 			],
 			"view/title": [
 				{
@@ -185,8 +217,13 @@
 				},
 				{
 					"command": "memberTimeline.refresh",
-					"when": "view == memberTimelineView",
+					"when": "view == memberTimelineView || view == memberTimelineRecentView",
 					"group": "navigation@99"
+				},
+				{
+					"command": "memberTimeline.clearRecentMembers",
+					"when": "view == memberTimelineRecentView",
+					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [

@@ -12,22 +12,29 @@ import {
   MemberTimelineIndex,
   MemberTimelineMember,
   pruneTimelineEntries,
-  parseMemberFromUri
+  parseMemberFromUri,
+  RecentMemberEntry
 } from './memberTimelineUtils';
+
+const RECENT_MEMBERS_DEFAULT_LIMIT = 10;
+const RECENT_MEMBERS_MAX_LIMIT = 100;
 
 export class MemberTimelineService implements vscode.Disposable {
   private readonly updatedEmitter = new vscode.EventEmitter<void>();
   readonly onDidUpdate = this.updatedEmitter.event;
   private cachedIndex?: MemberTimelineIndex;
+  private cachedRecentMembers?: RecentMemberEntry[];
   private readonly scheduledPrunes = new Set<string>();
   private readonly snapshotsUri: vscode.Uri;
   private readonly indexUri: vscode.Uri;
+  private readonly recentMembersUri: vscode.Uri;
   private storageInitialized = false;
   private currentSystem: string | undefined;
 
   constructor(storageUri: vscode.Uri) {
     this.snapshotsUri = vscode.Uri.joinPath(storageUri, `snapshots`);
     this.indexUri = vscode.Uri.joinPath(storageUri, `index.json`);
+    this.recentMembersUri = vscode.Uri.joinPath(storageUri, `recentMembers.json`);
   }
 
   dispose(): void {
@@ -36,6 +43,10 @@ export class MemberTimelineService implements vscode.Disposable {
 
   isEnabled(): boolean {
     return vscode.workspace.getConfiguration(`memberTimeline`).get<boolean>(`enabled`, true);
+  }
+
+  isRecentMembersEnabled(): boolean {
+    return vscode.workspace.getConfiguration(`memberTimeline`).get<boolean>(`recentMembersEnabled`, true);
   }
 
   setCurrentSystem(system: string | undefined): void {
@@ -50,6 +61,10 @@ export class MemberTimelineService implements vscode.Disposable {
     return Math.max(1, Math.min(500, vscode.workspace.getConfiguration(`memberTimeline`).get<number>(`snapshotLimit`, MEMBER_TIMELINE_MAX_ENTRIES)));
   }
 
+  private getRecentMembersLimit(): number {
+    return Math.max(1, Math.min(RECENT_MEMBERS_MAX_LIMIT, vscode.workspace.getConfiguration(`memberTimeline`).get<number>(`recentMembersLimit`, RECENT_MEMBERS_DEFAULT_LIMIT)));
+  }
+
   private async ensureStorageExists(): Promise<void> {
     if (this.storageInitialized) {
       return;
@@ -60,6 +75,7 @@ export class MemberTimelineService implements vscode.Disposable {
 
   resetStorage(): void {
     this.cachedIndex = undefined;
+    this.cachedRecentMembers = undefined;
     this.scheduledPrunes.clear();
   }
 
@@ -382,5 +398,62 @@ export class MemberTimelineService implements vscode.Disposable {
 
   parseMemberFromUri(uri: vscode.Uri): MemberTimelineMember | undefined {
     return parseMemberFromUri(uri);
+  }
+
+  private async loadRecentMembers(): Promise<RecentMemberEntry[]> {
+    if (this.cachedRecentMembers) {
+      return this.cachedRecentMembers;
+    }
+    try {
+      const raw = await vscode.workspace.fs.readFile(this.recentMembersUri);
+      const parsed = JSON.parse(Buffer.from(raw).toString(`utf8`));
+      this.cachedRecentMembers = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      this.cachedRecentMembers = [];
+    }
+    return this.cachedRecentMembers;
+  }
+
+  private async saveRecentMembers(entries: RecentMemberEntry[]): Promise<void> {
+    await this.ensureStorageExists();
+    await vscode.workspace.fs.writeFile(this.recentMembersUri, Buffer.from(JSON.stringify(entries, null, 2), `utf8`));
+    this.cachedRecentMembers = entries;
+  }
+
+  async recordRecentMemberOpen(member: MemberTimelineMember): Promise<void> {
+    if (!this.isEnabled() || !this.isRecentMembersEnabled() || !this.currentSystem) {
+      return;
+    }
+    try {
+      const normalizedMember = normalizeMember(member);
+      const key = buildMemberTimelineKey(normalizedMember, this.currentSystem);
+      const existing = await this.loadRecentMembers();
+      const filtered = existing.filter(e => buildMemberTimelineKey(e.member, e.system) !== key);
+      filtered.unshift({ system: this.currentSystem, timestamp: new Date().toISOString(), member: normalizedMember });
+      await this.saveRecentMembers(filtered.slice(0, this.getRecentMembersLimit()));
+      this.updatedEmitter.fire();
+    } catch (error) {
+      this.log(`Failed to record recently opened member ${member.library}/${member.file}(${member.name}).`, error);
+    }
+  }
+
+  async getRecentMembers(): Promise<RecentMemberEntry[]> {
+    if (!this.currentSystem || !this.isRecentMembersEnabled()) {
+      return [];
+    }
+    const entries = await this.loadRecentMembers();
+    return entries
+      .filter(e => e.system === this.currentSystem)
+      .slice(0, this.getRecentMembersLimit());
+  }
+
+  async clearRecentMembers(): Promise<void> {
+    if (!this.currentSystem) {
+      return;
+    }
+    const entries = await this.loadRecentMembers();
+    const remaining = entries.filter(e => e.system !== this.currentSystem);
+    await this.saveRecentMembers(remaining);
+    this.updatedEmitter.fire();
   }
 }

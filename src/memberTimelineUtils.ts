@@ -35,6 +35,12 @@ export interface MemberTimelineIndex {
   members: Record<string, MemberTimelineMemberIndex>;
 }
 
+export interface RecentMemberEntry {
+  system: string;
+  timestamp: string;
+  member: MemberTimelineMember;
+}
+
 export function normalizeMember(member: MemberTimelineMember): MemberTimelineMember {
   return {
     asp: member.asp?.toUpperCase(),
