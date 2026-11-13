@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6
+
+- Fixed: the extension only activated once the Source Member Timeline panel was shown (or one of its commands was run), so members opened or saved before then were not snapshotted or added to Recently Opened Members. It now activates on startup and tracks immediately.
+
 ## 1.0.5
 
 - Added a **Recently Opened Members** panel that lists the last members you opened, newest first, scoped to the connected system
